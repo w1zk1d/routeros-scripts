@@ -51,13 +51,13 @@ Then we import the certificates.
 
 Now let's download the main scripts, add them in configuration and remove the files.
 
-    [admin@MikroTik] > / tool fetch check-certificate=yes-without-crl dst-path="script-updates/global-config" "https://git.eworm.de/cgit.cgi/routeros-scripts/plain/global-config"
+    [admin@MikroTik] > / tool fetch check-certificate=yes-without-crl dst-path="script-updates/global-config" "https://git.eworm.de/cgit.cgi/routeros-scripts/plain/global-config\?h=pre-6-43"
           status: finished
       downloaded: 1KiBC-z pause]
            total: 1KiB
         duration: 0s
 
-    [admin@MikroTik] > / tool fetch check-certificate=yes-without-crl dst-path="script-updates/script-updates" "https://git.eworm.de/cgit.cgi/routeros-scripts/plain/script-updates"
+    [admin@MikroTik] > / tool fetch check-certificate=yes-without-crl dst-path="script-updates/script-updates" "https://git.eworm.de/cgit.cgi/routeros-scripts/plain/script-updates\?h=pre-6-43"
           status: finished
       downloaded: 1KiBC-z pause]
            total: 1KiB
