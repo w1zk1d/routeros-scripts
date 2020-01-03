@@ -1,6 +1,19 @@
 # RouterOS global-config changes
 # Copyright (c) 2019-2020 Christian Hesse <mail@eworm.de>
 
+# The old Let's Encrypt CA certificate is no longer used.
+# Update the chain if required, remove old CA certificate.
+:do {
+  :global CertificateDownload;
+  :local Cert [ / certificate find where fingerprint="0687260331a72403d909f105e69bcf0d32e1bd2493ffc6d9206d11bcd6770739" ];
+  :if ([ :len $Cert ] > 0) do={
+    :if ([ / certificate print count-only where fingerprint="25847d668eb4f04fdd40b12b6b0740c567da7d024308eb6c2c96fe41d9de218d" ] > 0) do={
+      $CertificateDownload "Let's Encrypt Authority X3";
+    }
+    / certificate remove $Cert;
+  }
+}
+
 # Changes for global-config to be added to notification on script-updates
 :global GlobalConfigChanges {
   1="moved variables from 'global-config' to 'global-functions' for independence";
@@ -13,4 +26,5 @@
   8="added donation hint and option to silence it";
   9="introduced configuration overlay 'global-config-overlay'";
   10="make health threshold for voltage configurable";
+  11="update Let's Encrypt trust chain";
 };
