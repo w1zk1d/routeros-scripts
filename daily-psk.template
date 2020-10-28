@@ -1,21 +1,26 @@
-#!rsc
+#!rsc by RouterOS
 # RouterOS script: daily-psk%TEMPL%
 # Copyright (c) 2013-2020 Christian Hesse <mail@eworm.de>
 #                         Michael Gisbers <michael@gisbers.de>
+# https://git.eworm.de/cgit/routeros-scripts/about/COPYING.md
 #
 # update daily PSK (pre shared key)
+# https://git.eworm.de/cgit/routeros-scripts/about/doc/daily-psk.md
 #
 # !! This is just a template! Replace '%PATH%' with 'caps-man'
 # !! or 'interface wireless'!
 
-:global Identity;
 :global DailyPskMatchComment;
+:global Identity;
 
+:global LogPrintExit;
 :global SendNotification;
+:global SymbolForNotification;
 :global UrlEncode;
 :global WaitForFile;
+:global WaitFullyConnected;
 
-:local Seen [ :toarray "" ];
+$WaitFullyConnected;
 
 # return pseudo-random string for PSK
 :local GeneratePSK do={
@@ -47,6 +52,7 @@
     ($DailyPskSecrets->2->$WeekDay));
 }
 
+:local Seen [ :toarray "" ];
 :local Date [ / system clock get date ];
 :local NewPsk [ $GeneratePSK $Date ];
 
@@ -60,15 +66,15 @@
   :local Skip 0;
 
   :if ($NewPsk != $OldPsk) do={
-    :log info ("Updating daily PSK for " . $Ssid . " to " . $NewPsk . " (was " . $OldPsk . ")");
+    $LogPrintExit info ("Updating daily PSK for " . $Ssid . " to " . $NewPsk . " (was " . $OldPsk . ")") false;
     / interface wireless access-list set $AccList private-pre-shared-key=$NewPsk;
     / caps-man access-list set $AccList private-passphrase=$NewPsk;
 
-    :if ([ / interface wireless print count-only where name=$IntName disabled=no ] = 1) do={
-    :if ([ / caps-man interface print count-only where configuration=$Configuration ] > 0) do={
+    :if ([ :len [ / interface wireless find where name=$IntName disabled=no ] ] = 1) do={
+    :if ([ :len [ / caps-man interface find where configuration=$Configuration ] ] > 0) do={
       :foreach SeenSsid in=$Seen do={
         :if ($SeenSsid = $Ssid) do={
-          :log debug ("Already sent a mail for SSID " . $Ssid . ", skipping.");
+          $LogPrintExit debug ("Already sent a mail for SSID " . $Ssid . ", skipping.") false;
           :set Skip 1;
         }
       }
@@ -88,7 +94,7 @@
           :set Attach "";
         }
 
-        $SendNotification ("daily PSK " . $Ssid) \
+        $SendNotification ([ $SymbolForNotification "calendar" ] . "daily PSK " . $Ssid) \
           ("This is the daily PSK on " . $Identity . ":\n\n" . \
             "SSID: " . $Ssid . "\n" . \
             "PSK:  " . $NewPsk . "\n" . \

@@ -1,31 +1,6 @@
-#!rsc
+#!rsc by RouterOS
 # RouterOS script: mode-button-scheduler
-# Copyright (c) 2018-2020 Christian Hesse <mail@eworm.de>
-#
-# act on multiple mode-botton presses from scheduler
 
-:global ModeButton;
+:global LogPrintExit;
 
-:local Count ($ModeButton->"count");
-:local Code ($ModeButton->[ :tostr $Count ]);
-
-:set ($ModeButton->"count") 0;
-/ system scheduler remove mode-button-scheduler;
-
-:if ([ :len $Code ] > 0) do={
-  :log info ("Acting on " . $Count . " mode-button presses: " . $Code);
-
-  :if ([ / system routerboard settings get silent-boot ] = false) do={
-    :for I from=1 to=$Count do={
-      :beep length=200ms;
-      :delay 200ms;
-    }
-  } else={
-    :delay 1s;
-  }
-
-  :local Parsed [ :parse $Code ];
-  $Parsed;
-} else={
-  :log info ("No action defined for " . $Count . " mode-button presses.");
-}
+$LogPrintExit warning ("This script's functionality has been merged into 'mode-button'.") true;

@@ -1,22 +1,28 @@
-#!rsc
+#!rsc by RouterOS
 # RouterOS script: global-config
 # Copyright (c) 2013-2020 Christian Hesse <mail@eworm.de>
+# https://git.eworm.de/cgit/routeros-scripts/about/COPYING.md
 #
 # global configuration
+# https://git.eworm.de/cgit/routeros-scripts/about/
 
 # Make sure all configuration properties are up to date and this
 # value is in sync with value in script 'global-functions'!
-:global GlobalConfigVersion 10;
+:global GlobalConfigVersion 35;
 
 # This is used for DNS and backup file.
 :global Domain "example.com";
 :global HostNameInZone true;
+:global PrefixInZone true;
+:global ServerNameInZone false;
 
 # These addresses are used to send e-mails to. The to-address needs
 # to be filled; cc-address can be empty, one address or a comma
 # separated list of addresses.
-:global EmailGeneralTo "mail@example.com";
-:global EmailGeneralCc "another@example.com";
+:global EmailGeneralTo "";
+:global EmailGeneralCc "";
+#:global EmailGeneralTo "mail@example.com";
+#:global EmailGeneralCc "another@example.com,third@example.com";
 
 # You can send Telegram notifications. Register a bot
 # and add the token and chat ids here.
@@ -24,6 +30,11 @@
 :global TelegramChatId "";
 #:global TelegramTokenId "123456:ABCDEF-GHI";
 #:global TelegramChatId "12345678";
+# This is whether or not to send Telegram messages with fixed-width font.
+:global TelegramFixedWidthFont true;
+
+# Toggle this to disable symbols in notifications.
+:global NotificationsWithSymbols true;
 
 # This defines what backups to generate and what password to use.
 :global BackupSendBinary false;
@@ -39,10 +50,18 @@
 :global BackupUploadUser "mikrotik";
 :global BackupUploadPass "v3ry-s3cr3t";
 
+# This defines a filter on log topics not to be forwarded.
+:global LogForwardFilter "(debug|info|script)";
+# ... and the same for log message text.
+:global LogForwardFilterMessage "^\$";
+#:global LogForwardFilterMessage "(^\$|message text|...)";
+
 # Specify an address to enable auto update to version assumed safe.
 # The configured channel (bugfix, current, release-candidate) is appended.
 :global SafeUpdateUrl "";
 #:global SafeUpdateUrl "https://example.com/ros/safe-update/";
+# Allow to install patch updates automatically.
+:global SafeUpdatePatch false;
 
 # These thresholds control when to send health notification
 # on temperature and voltage.
@@ -52,6 +71,8 @@
   board-temperature1=50;
   board-temperature2=50;
 }
+# This is deviation on recovery threshold against notification flooding.
+:global CheckHealthTemperatureDeviation 2;
 :global CheckHealthVoltagePercent 10;
 
 # This controls what configuration is activated by bridge-port-to-default.
@@ -84,6 +105,8 @@
   5="/ system script run bridge-port-toggle;";
 # add more here...
 };
+# This led gives visual feedback if type is 'on' or 'off'.
+:global ModeButtonLED "user-led";
 
 # Run commands on SMS action.
 :global SmsAction {
@@ -106,11 +129,7 @@
 #:global ScriptUpdatesBaseUrl "https://raw.githubusercontent.com/eworm-de/routeros-scripts/master/";
 #:global ScriptUpdatesBaseUrl "https://gitlab.com/eworm-de/routeros-scripts/raw/master/";
 :global ScriptUpdatesUrlSuffix "";
-:global ScriptUpdatesIgnore {
-  "global-config"
-}
-# Enable this to silence all configuration warnings.
-:global ScriptUpdatesConfigChangesIgnore false;
+
 # This project is developed in private spare time and usage is free of charge
 # for you. If you like the scripts and think this is of value for you or your
 # business please consider a donation:
@@ -124,4 +143,8 @@
 :global CertRenewPass {
   "v3ry-s3cr3t";
   "4n0th3r-s3cr3t";
+}
+:global CertIssuedExportPass {
+  "cert1-cn"="v3ry-s3cr3t";
+  "cert2-cn"="4n0th3r-s3cr3t";
 }

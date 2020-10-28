@@ -1,9 +1,13 @@
-#!rsc
+#!rsc by RouterOS
 # RouterOS script: update-gre-address
 # Copyright (c) 2013-2020 Christian Hesse <mail@eworm.de>
+# https://git.eworm.de/cgit/routeros-scripts/about/COPYING.md
 #
 # update gre interface remote address with dynamic address from
 # ipsec remote peer
+# https://git.eworm.de/cgit/routeros-scripts/about/doc/update-gre-address.md
+
+:global LogPrintExit;
 
 / interface gre set remote-address=0.0.0.0 disabled=yes [ find where !running !disabled ];
 
@@ -15,7 +19,7 @@
     :if ([ :typeof ($PeerVal->"dynamic-address") ] = "str" && \
          ($PeerVal->"dynamic-address" != $GreIntVal->"remote-address" || \
           $GreIntVal->"disabled" = true)) do={
-      :log info ("Updating remote address for interface " . $GreIntVal->"name" . " to " . $PeerVal->"dynamic-address");
+      $LogPrintExit info ("Updating remote address for interface " . $GreIntVal->"name" . " to " . $PeerVal->"dynamic-address") false;
       / interface gre set remote-address=0.0.0.0 disabled=yes [ find where remote-address=$PeerVal->"dynamic-address" name!=$GreIntVal->"name" ];
       / interface gre set $GreInt remote-address=($PeerVal->"dynamic-address") disabled=no;
     }

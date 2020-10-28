@@ -1,40 +1,47 @@
-#!rsc
+#!rsc by RouterOS
 # RouterOS script: bridge-port-to-default
 # Copyright (c) 2013-2020 Christian Hesse <mail@eworm.de>
+# https://git.eworm.de/cgit/routeros-scripts/about/COPYING.md
 #
 # reset bridge ports to default bridge
+# https://git.eworm.de/cgit/routeros-scripts/about/doc/bridge-port.md
 
 :global BridgePortTo;
 
-:local Len ([ :len $BridgePortTo ] + 1);
+:global IfThenElse;
+:global LogPrintExit;
+:global ParseKeyValueStore;
 
-:if ($Len = 1) do={
-  :delay 1s;
-  :set Len ([ :len $BridgePortTo ] + 1);
-}
-
-:foreach BridgePort in=[ / interface bridge port find where comment!="" ] do={
+:foreach BridgePort in=[ / interface bridge port find where !(comment=[]) ] do={
   :local BridgePortVal [ / interface bridge port get $BridgePort ];
-  :foreach Comment in=[ :toarray ($BridgePortVal->"comment") ] do={
-    :if ([ :pick $Comment 0 $Len ] = ($BridgePortTo . ":")) do={
-      :local BridgeDefault [ :pick $Comment $Len [ :len $Comment ] ];
+  :foreach Config,BridgeDefault in=[ $ParseKeyValueStore ($BridgePortVal->"comment") ] do={
+    :if ($Config = $BridgePortTo) do={
+      :local DHCPClient [ / ip dhcp-client find where interface=$BridgePortVal->"interface" comment="toggle with bridge port" ];
+
       :if ($BridgeDefault = "dhcp-client") do={
-        :if ($BridgePortVal->"disabled" = false) do={
-          :log info ("Disabling bridge port for interface " . $BridgePortVal->"interface" . ", enabling dhcp client.");
+        :if ([ :len $DHCPClient ] != 1) do={
+          $LogPrintExit warning ([ $IfThenElse ([ :len $DHCPClient ] = 0) "Missing" "Duplicate" ] . \
+              " dhcp client configuration for interface " . $BridgePortVal->"interface" . "!") true;
+        }
+        :local DHCPClientDisabled [ / ip dhcp-client get $DHCPClient disabled ];
+
+        :if ($BridgePortVal->"disabled" = false || $DHCPClientDisabled = true) do={
+          $LogPrintExit info ("Disabling bridge port for interface " . $BridgePortVal->"interface" . ", enabling dhcp client.") false;
           / interface bridge port disable $BridgePort;
-          / ip dhcp-client enable [ find where interface=$BridgePortVal->"interface" comment="toggle with bridge port" disabled=yes ];
+          / ip dhcp-client enable $DHCPClient;
         }
       } else={
-        :if ($BridgePortVal->"disabled" = true) do={
-          :log info ("Enabling bridge port for interface " . $BridgePortVal->"interface" . ", disabling dhcp client.");
-          / ip dhcp-client disable [ find where interface=$BridgePortVal->"interface" comment="toggle with bridge port" disabled=no ];
-          / interface bridge port enable $BridgePort;
-        }
-        :if ($BridgeDefault != $BridgePortVal->"bridge") do={
-          :log info ("Changing interface " . $BridgePortVal->"interface" . " to " . $BridgePortTo . " bridge " . $BridgeDefault);
-          / interface bridge port set bridge=$BridgeDefault $BridgePort;
+        :if ($BridgePortVal->"disabled" = true || $BridgeDefault != $BridgePortVal->"bridge") do={
+          $LogPrintExit info ("Enabling bridge port for interface " . $BridgePortVal->"interface" . ", changing to " . $BridgePortTo . \
+              " bridge " . $BridgeDefault . ", disabling dhcp client.") false;
+          :if ([ :len $DHCPClient ] = 1) do={
+            / ip dhcp-client disable $DHCPClient;
+            :delay 200ms;
+          }
+          / interface bridge port set disabled=no bridge=$BridgeDefault $BridgePort;
         } else={
-          :log debug ("Interface " . $BridgePortVal->"interface" . " already connected to " . $BridgePortTo . " bridge " . $BridgeDefault);
+          $LogPrintExit debug ("Interface " . $BridgePortVal->"interface" . " already connected to " . $BridgePortTo . \
+              " bridge " . $BridgeDefault . ".") false;
         }
       }
     }

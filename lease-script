@@ -1,15 +1,18 @@
-#!rsc
+#!rsc by RouterOS
 # RouterOS script: lease-script
 # Copyright (c) 2013-2020 Christian Hesse <mail@eworm.de>
+# https://git.eworm.de/cgit/routeros-scripts/about/COPYING.md
 #
 # run scripts on DHCP lease
+# https://git.eworm.de/cgit/routeros-scripts/about/doc/lease-script.md
+
+:global LogPrintExit;
 
 :if ([ :typeof $leaseActIP ] = "nothing" || \
      [ :typeof $leaseActMAC ] = "nothing" || \
      [ :typeof $leaseServerName ] = "nothing" || \
      [ :typeof $leaseBound ] = "nothing") do={
-  :log error "This script is supposed to run from ip dhcp-client.";
-  :error "Error: See log for details.";
+  $LogPrintExit error "This script is supposed to run from ip dhcp-server." true;
 }
 
 :local Scripts;
@@ -39,7 +42,7 @@
 :delay ((1 + $leaseBound) . "s");
 
 :foreach Script in=$Scripts do={
-  :if ([ / system script print count-only where name=$Script ] > 0) do={
+  :if ([ :len [ / system script find where name=$Script ] ] > 0) do={
     :log debug ("Running script from lease-script: " . $Script);
     / system script run $Script;
   }

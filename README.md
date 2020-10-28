@@ -1,23 +1,25 @@
 RouterOS Scripts
 ================
 
+[![GitHub forks](https://img.shields.io/github/forks/eworm-de/routeros-scripts?style=social)](https://github.com/eworm-de/routeros-scripts/network)
+[![GitHub stars](https://img.shields.io/github/stars/eworm-de/routeros-scripts?style=social)](https://github.com/eworm-de/routeros-scripts/stargazers)
+[![GitHub watchers](https://img.shields.io/github/watchers/eworm-de/routeros-scripts?style=social)](https://github.com/eworm-de/routeros-scripts/watchers)
+
 [RouterOS](https://mikrotik.com/software) is the operating system developed
 by [MikroTik](https://mikrotik.com/aboutus) for networking tasks. This
 repository holds a number of [scripts](https://wiki.mikrotik.com/wiki/Manual:Scripting)
 to manage RouterOS devices or extend their functionality.
 
-*Use at your own risk!*
+*Use at your own risk*, pay attention to
+[license and warranty](#license-and-warranty)!
 
 Requirements
 ------------
 
-Latest version of the scripts require at least **RouterOS 6.43** to function
-properly. The changelog lists the corresponding change as follows:
+Latest version of the scripts require recent RouterOS to function properly.
+Make sure to install latest updates before you begin.
 
-> *) fetch - added "as-value" output format;
-
-Specific scripts may require even newer RouterOS version, for example cloud
-backup was added in 6.44.
+Specific scripts may require even newer RouterOS version.
 
 Initial setup
 -------------
@@ -25,7 +27,7 @@ Initial setup
 ### Get me ready!
 
 If you know how things work just copy and paste the
-[initial commands](initial-commands). Remember to edit and rerun
+[initial commands](INITIAL-COMMANDS.md). Remember to edit and rerun
 `global-config-overlay`!
 First time users should take the long way below.
 
@@ -35,6 +37,9 @@ Want to see it in action? I've had a presentation [Repository based
 RouterOS script distribution](https://www.youtube.com/watch?v=B9neG3oAhcY)
 including demonstation recorded live at [MUM Europe
 2019](https://mum.mikrotik.com/2019/EU/) in Vienna.
+
+*Be warned!* Some details changed. So see the presentation, then follow
+the steps below for up-to-date commands.
 
 ### The long way in detail
 
@@ -85,11 +90,15 @@ crap and a good example how to *not* do it.
 
 Now let's download the main scripts and add them in configuration on the fly.
 
-    [admin@MikroTik] > :foreach Script in={ "global-config"; "global-config-overlay"; "global-functions"; "script-updates" } do={ / system script add name=$Script source=([ / tool fetch check-certificate=yes-without-crl ("https://git.eworm.de/cgit/routeros-scripts/plain/" . $Script) output=user as-value]->"data"); }
+    [admin@MikroTik] > :foreach Script in={ "global-config"; "global-config-overlay"; "global-functions" } do={ / system script add name=$Script source=([ / tool fetch check-certificate=yes-without-crl ("https://git.eworm.de/cgit/routeros-scripts/plain/" . $Script) output=user as-value]->"data"); }
 
-The configuration needs to be tweaked for your needs. Make sure not to send
-your mails to `mail@example.com`! Edit `global-config-overlay`, copy
-configuration from `global-config`.
+Mark `global-config-overlay` not to be overwritten by future updates.
+
+    [admin@MikroTik] > / system script set comment="ignore" global-config-overlay
+
+The configuration needs to be tweaked for your needs. Edit
+`global-config-overlay`, copy configuration from
+[`global-config`](global-config) (the one without `-overlay`).
 
     [admin@MikroTik] > / system script edit global-config-overlay source
 
@@ -101,18 +110,17 @@ And finally load configuration and functions and add the scheduler.
 Updating scripts
 ----------------
 
-To update existing scripts just run `script-updates`.
+To update existing scripts just run function `$ScriptInstallUpdate`.
 
-    [admin@MikroTik] > / system script run script-updates
+    [admin@MikroTik] > $ScriptInstallUpdate
 
 Adding a script
 ---------------
 
-To add a script from the repository create a configuration item first, then
-update scripts to fetch the source.
+To add a script from the repository run function `$ScriptInstallUpdate` with
+a comma separated list of script names.
 
-    [admin@MikroTik] > / system script add name="check-routeros-update"
-    [admin@MikroTik] > / system script run script-updates
+    [admin@MikroTik] > $ScriptInstallUpdate check-certificates,check-routeros-update
 
 Scheduler and events
 --------------------
@@ -128,14 +136,60 @@ Some events can run a script. If you want your DHCP hostnames to be available
 in DNS use `dhcp-to-dns` with the events from dhcp server. For a regular
 cleanup add a scheduler entry.
 
-    [admin@MikroTik] > / system script add name="dhcp-to-dns"
-    [admin@MikroTik] > / system script run script-updates
-    [admin@MikroTik] > / ip dhcp-server set lease-script=dhcp-to-dns [ find ]
+    [admin@MikroTik] > $ScriptInstallUpdate dhcp-to-dns,lease-script
+    [admin@MikroTik] > / ip dhcp-server set lease-script=lease-script [ find ]
     [admin@MikroTik] > / system scheduler add name="dhcp-to-dns" interval=5m on-event="/ system script run dhcp-to-dns;"
 
 There's much more to explore... Have fun!
 
-## Contribute
+Available Scripts
+-----------------
+
+* [Find and remove access list duplicates](doc/accesslist-duplicates.md)
+* [Manage ports in bridge](doc/bridge-port.md)
+* [Download packages for CAP upgrade from CAPsMAN](doc/capsman-download-packages.md)
+* [Run rolling CAP upgrades from CAPsMAN](doc/capsman-rolling-upgrade.md)
+* [Renew locally issued certificates](doc/certificate-renew-issued.md)
+* [Renew certificates and notify on expiration](doc/check-certificates.md)
+* [Notify about health state](doc/check-health.md)
+* [Notify on LTE firmware upgrade](doc/check-lte-firmware-upgrade.md)
+* [Notify on RouterOS update](doc/check-routeros-update.md)
+* [Upload backup to Mikrotik cloud](doc/cloud-backup.md)
+* [Collect MAC addresses in wireless access list](doc/collect-wireless-mac.md)
+* [Use wireless network with daily psk](doc/daily-psk.md)
+* [Comment DHCP leases with info from access list](doc/dhcp-lease-comment.md)
+* [Create DNS records for DHCP leases](doc/dhcp-to-dns.md)
+* [Send backup via e-mail](doc/email-backup.md)
+* [Wait for configuration und functions](doc/global-wait.md)
+* [Send GPS position to server](doc/gps-track.md)
+* [Use WPA2 network with hotspot credentials](doc/hotspot-to-wpa.md)
+* [Update configuration on IPv6 prefix change](doc/ipv6-update.md)
+* [Manage IP addresses with bridge status](doc/ip-addr-bridge.md)
+* [Run other scripts on DHCP lease](doc/lease-script.md)
+* [Manage LEDs dark mode](doc/leds-mode.md)
+* [Forward log messages via notification](doc/log-forward.md)
+* [Mode button with multiple presses](doc/mode-button.md)
+* [Notify on host up and down](doc/netwatch-notify.md)
+* [Manage remote logging](doc/netwatch-syslog.md)
+* [Visualize OSPF state via LEDs](doc/ospf-to-leds.md)
+* [Manage system update](doc/packages-update.md)
+* [Run scripts on ppp connection](doc/ppp-on-up.md)
+* [Rotate NTP servers](doc/rotate-ntp.md)
+* [Act on received SMS](doc/sms-action.md)
+* [Forward received SMS](doc/sms-forward.md)
+* [Import SSH keys](doc/ssh-keys-import.md)
+* [Play Super Mario theme](doc/super-mario-theme.md)
+* [Install LTE firmware upgrade](doc/unattended-lte-firmware-upgrade.md)
+* [Update GRE configuration with dynamic addresses](doc/update-gre-address.md)
+* [Update tunnelbroker configuration](doc/update-tunnelbroker.md)
+* [Upload backup to server](doc/upload-backup.md)
+
+[comment]: # (TODO: currently undocumented)
+[comment]: # (* learn-mac-based-vlan)
+[comment]: # (* manage-umts)
+
+Contribute
+----------
 
 Thanks a lot for [past contributions](CONTRIBUTIONS.md)!
 
@@ -155,7 +209,21 @@ business please consider to
 
 Thanks a lot for your support!
 
-## Upstream
+License and warranty
+--------------------
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+[GNU General Public License](COPYING.md) for more details.
+
+Upstream
+--------
 
 URL:
 [GitHub.com](https://github.com/eworm-de/routeros-scripts#routeros-scripts)

@@ -1,19 +1,26 @@
-#!rsc
+#!rsc by RouterOS
 # RouterOS script: hotspot-to-wpa
 # Copyright (c) 2019-2020 Christian Hesse <mail@eworm.de>
+# https://git.eworm.de/cgit/routeros-scripts/about/COPYING.md
 #
 # add private WPA passphrase after hotspot login
+# https://git.eworm.de/cgit/routeros-scripts/about/doc/hotspot-to-wpa.md
+
+:global LogPrintExit;
 
 :local MacAddress $"mac-address";
 :local UserName $username;
 :local Date [ / system clock get date ];
 :local PassWord [ / ip hotspot user get [ find where name=$UserName ] password ];
 
-:local PlaceBefore [ / caps-man access-list find where comment="--- hotspot-to-wpa above ---" disabled ];
-:if ([ :len $PlaceBefore ] = 0) do={
-  :log error "Missing disabled access-list entry with comment '--- hotspot-to-wpa above ---'";
-  :error "Error: See log for details.";
+:if ([ :len [ / caps-man access-list find where comment="--- hotspot-to-wpa above ---" disabled ] ] = 0) do={
+  / caps-man access-list add comment="--- hotspot-to-wpa above ---" disabled=yes;
+  $LogPrintExit warning "Added disabled access-list entry with comment '--- hotspot-to-wpa above ---'." false;
 }
+:local PlaceBefore [ / caps-man access-list find where comment="--- hotspot-to-wpa above ---" disabled ];
+
+$LogPrintExit info ("Adding/updating accesslist entry for mac address " . $MacAddress . \
+  " (user " . $UserName . ").") false;
 
 / caps-man access-list remove [ find where mac-address=$MacAddress comment~"^hotspot-to-wpa: " ];
 

@@ -1,16 +1,18 @@
-#!rsc
+#!rsc by RouterOS
 # RouterOS script: ipv6-update
 # Copyright (c) 2013-2020 Christian Hesse <mail@eworm.de>
+# https://git.eworm.de/cgit/routeros-scripts/about/COPYING.md
 #
 # update firewall and dns settings on IPv6 prefix change
+# https://git.eworm.de/cgit/routeros-scripts/about/doc/ipv6-update.md
 
 :local PdPrefix $"pd-prefix";
 
+:global LogPrintExit;
 :global ParseKeyValueStore;
 
 :if ([ :typeof $PdPrefix ] = "nothing") do={
-  :log error "This script is supposed to run from ipv6 dhcp-client.";
-  :error "Error: See log for details.";
+  $LogPrintExit error "This script is supposed to run from ipv6 dhcp-client." true;
 }
 
 :local Pool [ / ipv6 pool get [ find where prefix=$PdPrefix ] name ];
